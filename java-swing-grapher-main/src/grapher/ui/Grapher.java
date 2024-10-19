@@ -37,8 +37,8 @@ public class Grapher extends JPanel {
     private JPanel graphPanel;
     private JToolBar toolBar; // Barra de ferramentas
 
-	public Grapher() {
-		xmin = -PI/2.; xmax = 3*PI/2;
+    public Grapher(JFrame frame) {
+        xmin = -PI/2.; xmax = 3*PI/2;
 		ymin = -1.5;   ymax = 1.5;
 		functions = new Vector<Function>();
 	
@@ -61,6 +61,13 @@ public class Grapher extends JPanel {
         functionListModel = new DefaultListModel<>();
         functionList = new JList<>(functionListModel);
 
+        // Painel para a lista
+        JPanel listPanel = new JPanel(new BorderLayout());
+        listPanel.add(new JScrollPane(functionList), BorderLayout.CENTER);
+
+        // Define uma largura fixa para a lista de funções
+        functionList.setPreferredSize(new Dimension(200, 0)); // Largura fixa de 150 pixels, altura ajustável
+
         // Adicionando o ListSelectionListener
         functionList.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -70,14 +77,11 @@ public class Grapher extends JPanel {
         });
 
         // Adicionando um campo de texto e botões para adicionar e apagar funções
-        JTextField functionInput = new JTextField();
         JButton addButton = new JButton("+");
         JButton removeButton = new JButton("-");
 
         // Painel para a lista e a caixa de entrada
-        JPanel listPanel = new JPanel(new BorderLayout());
         listPanel.add(new JScrollPane(functionList), BorderLayout.CENTER);
-        listPanel.add(functionInput, BorderLayout.NORTH);
         
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT)); // Painel para os botões
         removeButton.setEnabled(false); // Inicialmente desabilitado
@@ -142,7 +146,72 @@ public class Grapher extends JPanel {
         setLayout(new BorderLayout());
         add(listPanel, BorderLayout.WEST);
         add(graphPanel, BorderLayout.CENTER); // Adiciona o painel gráfico
+        createMenuBar(frame);
+    
     }
+    // Método para criar a barra de menus
+    private void createMenuBar(JFrame frame) {
+        JMenuBar menuBar = new JMenuBar();
+        
+        // Criando o menu "Expression"
+        JMenu expressionMenu = new JMenu("Expression");
+        
+        // Ação para adicionar função
+        JMenuItem addItem = new JMenuItem("Add Function");
+        addItem.addActionListener(e -> {
+            JTextField functionInput = new JTextField(10);
+            Object[] message = {
+                "Nova função:", functionInput
+            };
+
+            int option = JOptionPane.showConfirmDialog(null, message, "Adicionar Função", JOptionPane.OK_CANCEL_OPTION);
+            if (option == JOptionPane.OK_OPTION) {
+                String functionText = functionInput.getText();
+                if (!functionText.isEmpty()) {
+                    try {
+                        addFunction(functionText);
+                        functionListModel.addElement(functionText);
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(null, "Função inválida!");
+                    }
+                }
+            }
+        });
+        
+        // Ação para remover função
+        JMenuItem removeItem = new JMenuItem("Remove Function");
+        removeItem.setEnabled(false); // Inicialmente desabilitado
+        removeItem.addActionListener(e -> {
+            int selectedIndex = functionList.getSelectedIndex();
+            if (selectedIndex != -1) {
+                functions.remove(selectedIndex);
+                functionListModel.remove(selectedIndex);
+                selectedFunctionIndex = -1;
+                removeItem.setEnabled(false); // Inicialmente desabilitado
+                repaint();
+            } else {
+                JOptionPane.showMessageDialog(null, "Selecione uma função para remover!");
+            }
+        });
+        
+
+        // Ouvinte de seleção para habilitar/desabilitar o menu de remoção
+        functionList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                selectedFunctionIndex = functionList.getSelectedIndex();
+                removeItem.setEnabled(selectedFunctionIndex != -1); // Habilita ou desabilita o item do menu
+            }
+        });
+        
+        // Adicionando os itens ao menu
+        expressionMenu.add(addItem);
+        expressionMenu.add(removeItem);
+        
+        // Adicionando o menu ao menu bar
+        menuBar.add(expressionMenu);
+        
+        // Adicionando o menu bar ao JFrame
+        frame.setJMenuBar(menuBar);    }
 
         
 // Método para desenhar o gráfico no painel gráfico

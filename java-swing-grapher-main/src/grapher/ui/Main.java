@@ -14,7 +14,7 @@
 		 super(title);
 		 setDefaultCloseOperation(EXIT_ON_CLOSE);
 		 
-		 Grapher grapher = new Grapher();		
+		 Grapher grapher = new Grapher(this);		
 		 for(String expression: expressions) {
 			 grapher.addFunction(expression);
 		 }
@@ -27,7 +27,7 @@
 		 final String[] expressions = argv;
 		 SwingUtilities.invokeLater(new Runnable() {
 			 public void run() { 
-				 new Main("grapher", expressions).setVisible(true); 
+				 new Main("grapher", expressions).setVisible(true);
 			 }
 		 });
 	 }
