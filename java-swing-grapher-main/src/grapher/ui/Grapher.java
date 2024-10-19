@@ -35,6 +35,7 @@ public class Grapher extends JPanel {
 
     // Painel para o gráfico
     private JPanel graphPanel;
+    private JToolBar toolBar; // Barra de ferramentas
 
 	public Grapher() {
 		xmin = -PI/2.; xmax = 3*PI/2;
@@ -78,40 +79,62 @@ public class Grapher extends JPanel {
         listPanel.add(new JScrollPane(functionList), BorderLayout.CENTER);
         listPanel.add(functionInput, BorderLayout.NORTH);
         
-        JPanel buttonPanel = new JPanel(); // Painel para os botões
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT)); // Painel para os botões
+        removeButton.setEnabled(false); // Inicialmente desabilitado
+
+        // Adicionando botões ao painel de botões
         buttonPanel.add(addButton);
         buttonPanel.add(removeButton);
-        listPanel.add(buttonPanel, BorderLayout.SOUTH);
+        listPanel.add(buttonPanel, BorderLayout.SOUTH); // Adicionando o painel de botões na parte inferior
 
         // Ação para o botão de adicionar função
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String functionText = functionInput.getText();
-                if (!functionText.isEmpty()) {
-                    try {
-                        addFunction(functionText);
-                        functionListModel.addElement(functionText);  // Adiciona a função à lista
-                        functionInput.setText("");  // Limpa o campo de texto após a adição
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(null, "Função inválida!");
+                // Criação da janela de entrada
+                JTextField functionInput = new JTextField(10);
+                Object[] message = {
+                    "Nova função:", functionInput
+                };
+
+                int option = JOptionPane.showConfirmDialog(null, message, "Adicionar Função", JOptionPane.OK_CANCEL_OPTION);
+                if (option == JOptionPane.OK_OPTION) {
+                    String functionText = functionInput.getText();
+                    if (!functionText.isEmpty()) {
+                        try {
+                            addFunction(functionText);
+                            functionListModel.addElement(functionText); // Adiciona a função à lista
+                        } catch (Exception ex) {
+                            JOptionPane.showMessageDialog(null, "Função inválida!");
+                        }
                     }
                 }
             }
         });
 
         // Ação para o botão de remover função
-        removeButton.addActionListener(new ActionListener() {
+        removeButton.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 int selectedIndex = functionList.getSelectedIndex();
                 if (selectedIndex != -1) {
                     functions.remove(selectedIndex); // Remove a função da lista
                     functionListModel.remove(selectedIndex); // Remove da lista exibida
+                    selectedFunctionIndex = -1; // Reseta a seleção
+                    removeButton.setEnabled(false); // Desabilita o botão de remoção
                     repaint(); // Repaint para atualizar o gráfico
                 } else {
                     JOptionPane.showMessageDialog(null, "Selecione uma função para remover!");
                 }
+            }
+        });
+
+        // Adicionando um ouvinte de seleção à lista para habilitar o botão de remoção
+        functionList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                selectedFunctionIndex = functionList.getSelectedIndex();
+                removeButton.setEnabled(selectedFunctionIndex != -1); // Habilita ou desabilita o botão
+                repaint(); // Redesenha o gráfico para refletir a seleção
             }
         });
 
@@ -121,7 +144,7 @@ public class Grapher extends JPanel {
         add(graphPanel, BorderLayout.CENTER); // Adiciona o painel gráfico
     }
 
-    // Método para desenhar o gráfico no painel gráfico
+        
 // Método para desenhar o gráfico no painel gráfico
 protected void drawGraph(Graphics g) {
     W = graphPanel.getWidth();
