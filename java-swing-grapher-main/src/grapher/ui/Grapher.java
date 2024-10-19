@@ -2,17 +2,6 @@ package grapher.ui;
 
 /* imports *****************************************************************/
 import java.math.BigDecimal;
-
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Color;
-import java.awt.BasicStroke;
-import java.awt.RenderingHints;
-import java.awt.Point;
-
-import javax.swing.JPanel;
-
 import java.util.Vector;
 
 import static java.lang.Math.*;
@@ -42,6 +31,7 @@ public class Grapher extends JPanel {
 
 	protected DefaultListModel<String> functionListModel; // Modelo para a JList
     protected JList<String> functionList; // Lista de funções
+    private int selectedFunctionIndex = -1; // -1 significa que nenhuma função está selecionada
 
     // Painel para o gráfico
     private JPanel graphPanel;
@@ -69,6 +59,14 @@ public class Grapher extends JPanel {
 		// Configurando o modelo e a lista de funções
         functionListModel = new DefaultListModel<>();
         functionList = new JList<>(functionListModel);
+
+        // Adicionando o ListSelectionListener
+        functionList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                selectedFunctionIndex = functionList.getSelectedIndex();
+                repaint(); // Redesenha o gráfico para refletir a seleção
+            }
+        });
 
         // Adicionando um campo de texto e botões para adicionar e apagar funções
         JTextField functionInput = new JTextField();
@@ -124,77 +122,94 @@ public class Grapher extends JPanel {
     }
 
     // Método para desenhar o gráfico no painel gráfico
-    protected void drawGraph(Graphics g) {
-        W = graphPanel.getWidth();
-        H = graphPanel.getHeight();
+// Método para desenhar o gráfico no painel gráfico
+protected void drawGraph(Graphics g) {
+    W = graphPanel.getWidth();
+    H = graphPanel.getHeight();
 
-        Graphics2D g2 = (Graphics2D) g;
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    Graphics2D g2 = (Graphics2D) g;
+    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // background
-        g2.setColor(Color.WHITE);
-        g2.fillRect(0, 0, W, H);
+    // background
+    g2.setColor(Color.WHITE);
+    g2.fillRect(0, 0, W, H);
 
-        // box
-        W -= 2 * MARGIN;
-        H -= 2 * MARGIN;
-        if (W < 0 || H < 0) {
-            return;
-        }
-
-        // plot
-        g2.setColor(Color.BLACK);
-        g2.drawRect(MARGIN, MARGIN, W, H);
-
-        g2.clipRect(MARGIN, MARGIN, W, H);
-
-        // x values
-        final int N = W / STEP + 1;
-        final double dx = dx(STEP);
-        double xs[] = new double[N];
-        int Xs[] = new int[N];
-        for (int i = 0; i < N; i++) {
-            double x = xmin + i * dx;
-            xs[i] = x;
-            Xs[i] = X(x);
-        }
-
-        for (Function f : functions) {
-            // y values
-            int Ys[] = new int[N];
-            for (int i = 0; i < N; i++) {
-                Ys[i] = Y(f.y(xs[i]));
-            }
-
-            g2.drawPolyline(Xs, Ys, N);
-        }
-
-        g2.setClip(null);
-
-        // axes
-        g2.drawString("x", W + MARGIN, H + MARGIN + 10);
-        g2.drawString("y", MARGIN - 10, MARGIN);
-
-        drawXTick(g2, BigDecimal.ZERO);
-        drawYTick(g2, BigDecimal.ZERO);
-
-        BigDecimal xstep = unit((xmax - xmin) / 10);
-        BigDecimal ystep = unit((ymax - ymin) / 10);
-
-        g2.setStroke(dash);
-        for (BigDecimal x = xstep; x.doubleValue() < xmax; x = x.add(xstep)) {
-            drawXTick(g2, x);
-        }
-        for (BigDecimal x = xstep.negate(); x.doubleValue() > xmin; x = x.subtract(xstep)) {
-            drawXTick(g2, x);
-        }
-        for (BigDecimal y = ystep; y.doubleValue() < ymax; y = y.add(ystep)) {
-            drawYTick(g2, y);
-        }
-        for (BigDecimal y = ystep.negate(); y.doubleValue() > ymin; y = y.subtract(ystep)) {
-            drawYTick(g2, y);
-        }
+    // box
+    W -= 2 * MARGIN;
+    H -= 2 * MARGIN;
+    if (W < 0 || H < 0) {
+        return;
     }
+
+    // plot
+    g2.setColor(Color.BLACK);
+    g2.drawRect(MARGIN, MARGIN, W, H);
+
+    g2.clipRect(MARGIN, MARGIN, W, H);
+
+    // x values
+    final int N = W / STEP + 1;
+    final double dx = dx(STEP);
+    double xs[] = new double[N];
+    int Xs[] = new int[N];
+    for (int i = 0; i < N; i++) {
+        double x = xmin + i * dx;
+        xs[i] = x;
+        Xs[i] = X(x);
+    }
+
+    for (int i = 0; i < functions.size(); i++) {
+        Function f = functions.get(i);
+        // y values
+        int Ys[] = new int[N];
+        for (int j = 0; j < N; j++) {
+            Ys[j] = Y(f.y(xs[j]));
+        }
+    
+        // Change the stroke for selected functions
+        if (functionList.isSelectedIndex(i)) {
+            g2.setStroke(new BasicStroke(2)); // Traço mais grosso
+            g2.setFont(new Font("Arial", Font.BOLD, 12)); // Coloca a fonte em negrito
+        } else {
+            g2.setStroke(new BasicStroke(1)); // Traço normal
+            g2.setFont(new Font("Arial", Font.PLAIN, 12)); // Fonte normal
+        }
+    
+        g2.drawPolyline(Xs, Ys, N);
+    }
+    
+    // Restaurando o stroke e a fonte após desenhar as funções
+    g2.setStroke(new BasicStroke(1)); // Traço padrão
+    g2.setFont(new Font("Arial", Font.PLAIN, 12)); // Fonte padrão
+    
+    g2.setClip(null);
+
+    // eixos
+    g2.drawString("x", W + MARGIN, H + MARGIN + 10);
+    g2.drawString("y", MARGIN - 10, MARGIN);
+
+    drawXTick(g2, BigDecimal.ZERO);
+    drawYTick(g2, BigDecimal.ZERO);
+
+    BigDecimal xstep = unit((xmax - xmin) / 10);
+    BigDecimal ystep = unit((ymax - ymin) / 10);
+
+    g2.setStroke(dash);
+    for (BigDecimal x = xstep; x.doubleValue() < xmax; x = x.add(xstep)) {
+        drawXTick(g2, x);
+    }
+    for (BigDecimal x = xstep.negate(); x.doubleValue() > xmin; x = x.subtract(xstep)) {
+        drawXTick(g2, x);
+    }
+    for (BigDecimal y = ystep; y.doubleValue() < ymax; y = y.add(ystep)) {
+        drawYTick(g2, y);
+    }
+    for (BigDecimal y = ystep.negate(); y.doubleValue() > ymin; y = y.subtract(ystep)) {
+        drawYTick(g2, y);
+    }
+}
+
+
 
     public Dimension getPreferredSize() {
         return new Dimension(W, H);
