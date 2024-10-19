@@ -21,7 +21,6 @@ import grapher.fc.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Vector;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -71,15 +70,20 @@ public class Grapher extends JPanel {
         functionListModel = new DefaultListModel<>();
         functionList = new JList<>(functionListModel);
 
-        // Adicionando um campo de texto e botão para adicionar novas funções
+        // Adicionando um campo de texto e botões para adicionar e apagar funções
         JTextField functionInput = new JTextField();
-        JButton addButton = new JButton("Adicionar Função");
+        JButton addButton = new JButton("+");
+        JButton removeButton = new JButton("-");
 
         // Painel para a lista e a caixa de entrada
         JPanel listPanel = new JPanel(new BorderLayout());
         listPanel.add(new JScrollPane(functionList), BorderLayout.CENTER);
         listPanel.add(functionInput, BorderLayout.NORTH);
-        listPanel.add(addButton, BorderLayout.SOUTH);
+        
+        JPanel buttonPanel = new JPanel(); // Painel para os botões
+        buttonPanel.add(addButton);
+        buttonPanel.add(removeButton);
+        listPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         // Ação para o botão de adicionar função
         addButton.addActionListener(new ActionListener() {
@@ -94,6 +98,21 @@ public class Grapher extends JPanel {
                     } catch (Exception ex) {
                         JOptionPane.showMessageDialog(null, "Função inválida!");
                     }
+                }
+            }
+        });
+
+        // Ação para o botão de remover função
+        removeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int selectedIndex = functionList.getSelectedIndex();
+                if (selectedIndex != -1) {
+                    functions.remove(selectedIndex); // Remove a função da lista
+                    functionListModel.remove(selectedIndex); // Remove da lista exibida
+                    repaint(); // Repaint para atualizar o gráfico
+                } else {
+                    JOptionPane.showMessageDialog(null, "Selecione uma função para remover!");
                 }
             }
         });
