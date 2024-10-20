@@ -9,9 +9,15 @@ import static java.lang.Math.*;
 import grapher.fc.*;
 
 import javax.swing.*;
+
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
 
 /* Grapher *****************************************************************/
 public class Grapher extends JPanel {
@@ -73,6 +79,18 @@ public class Grapher extends JPanel {
             if (!e.getValueIsAdjusting()) {
                 selectedFunctionIndex = functionList.getSelectedIndex();
                 repaint(); // Redesenha o gráfico para refletir a seleção
+            }
+        });
+
+        functionList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.getClickCount() == 2) { // Verifica se foi um clique duplo
+                    int index = functionList.getSelectedIndex();
+                    if (index != -1) {
+                        Grapher.this.editFunction(index); // Chama editFunction
+                    }
+                }
             }
         });
 
@@ -147,7 +165,33 @@ public class Grapher extends JPanel {
         add(listPanel, BorderLayout.WEST);
         add(graphPanel, BorderLayout.CENTER); // Adiciona o painel gráfico
         createMenuBar(frame);
+    }
     
+    // Adicione isso na classe Grapher, fora de qualquer outro método
+    void editFunction(int index) {
+    // Criação da janela de entrada para edição da função
+    JTextField functionInput = new JTextField(10);
+    functionInput.setText(functionListModel.getElementAt(index)); // Define o texto atual da função
+
+    Object[] message = {
+        "Editar função:", functionInput
+    };
+
+    int option = JOptionPane.showConfirmDialog(null, message, "Editar Função", JOptionPane.OK_CANCEL_OPTION);
+    if (option == JOptionPane.OK_OPTION) {
+        String functionText = functionInput.getText();
+        if (!functionText.isEmpty()) {
+            try {
+                // Atualiza a função na lista
+                functions.set(index, FunctionFactory.createFunction(functionText));
+                functionListModel.set(index, functionText); // Atualiza a lista exibida
+                repaint(); // Redesenha o gráfico
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(null, "Função inválida!");
+            }
+        }
+    }
+
     }
     // Método para criar a barra de menus
     private void createMenuBar(JFrame frame) {
